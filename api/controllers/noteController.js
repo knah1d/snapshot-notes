@@ -14,76 +14,119 @@ export const getNotes = async (req, res) => {
 
         const total = await Note.countDocuments({ user: req.user._id });
 
+        const formattedNotes = notes.map((note) => ({
+            id: note._id.toString(),
+            title: note.title,
+            content: note.content,
+            createdAt: note.createdAt.toISOString(),
+            updatedAt: note.updatedAt.toISOString(),
+            userId: note.user.toString(),
+        }));
+
         res.status(200).json({
-            notes,
+            notes: formattedNotes,
             currentPage: page,
             totalPages: Math.ceil(total / limit),
             totalNotes: total,
             hasMore: skip + notes.length < total,
         });
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        console.error("Error in getNotes:", err);
+        res.status(500).json({ error: "Failed to fetch notes" });
     }
 };
 
 // Create a note
 export const createNote = async (req, res) => {
     const { title, content } = req.body;
+
+    if (!title || !title.trim()) {
+        return res.status(400).json({ error: "Title is required" });
+    }
+
     try {
         const newNote = await Note.create({
-            title,
-            content,
+            title: title.trim(),
+            content: content || "",
             user: req.user._id,
-            createdAt: Date.now(),
-            updatedAt: Date.now(),
         });
-        res.status(201).json(newNote);
+
+        res.status(201).json({
+            id: newNote._id.toString(),
+            title: newNote.title,
+            content: newNote.content,
+            createdAt: newNote.createdAt.toISOString(),
+            updatedAt: newNote.updatedAt.toISOString(),
+            userId: newNote.user.toString(),
+        });
     } catch (err) {
-        res.status(400).json({ error: err.message });
+        console.error("Error in createNote:", err);
+        res.status(400).json({ error: "Failed to create note" });
     }
 };
 
+// Update a note
 export const updateNote = async (req, res) => {
     const { id } = req.params;
     const { title, content } = req.body;
+
+    if (!title || !title.trim()) {
+        return res.status(400).json({ error: "Title is required" });
+    }
+
     try {
-        const updatedNote = await Note.findByIdAndUpdate(
-            id,
-            { title, content, updatedAt: Date.now() },
-            { new: true }
-        );
-        if (!updatedNote) {
+        const note = await Note.findById(id);
+        if (!note) {
             return res.status(404).json({ error: "Note not found" });
         }
-        res.status(200).json(updatedNote);
+
+        // Check if the note belongs to the user
+        if (note.user.toString() !== req.user._id.toString()) {
+            return res
+                .status(403)
+                .json({ error: "Not authorized to update this note" });
+        }
+
+        note.title = title.trim();
+        note.content = content || "";
+        note.updatedAt = new Date();
+        await note.save();
+
+        res.status(200).json({
+            id: note._id.toString(),
+            title: note.title,
+            content: note.content,
+            createdAt: note.createdAt.toISOString(),
+            updatedAt: note.updatedAt.toISOString(),
+            userId: note.user.toString(),
+        });
     } catch (err) {
-        res.status(400).json({ error: err.message });
+        console.error("Error in updateNote:", err);
+        res.status(400).json({ error: "Failed to update note" });
     }
 };
 
 // Delete a note
 export const deleteNote = async (req, res) => {
     const { id } = req.params;
-    try {
-        const deletedNote = await Note.findByIdAndDelete(id);
-        if (!deletedNote) {
-            return res.status(404).json({ error: "Note not found" });
-        }
-        res.status(200).json({ message: "Note deleted successfully" });
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-};
-// Get a single note
-export const getNote = async (req, res) => {
-    const { id } = req.params;
+
     try {
         const note = await Note.findById(id);
         if (!note) {
             return res.status(404).json({ error: "Note not found" });
         }
-        res.status(200).json(note);
+
+        // Check if the note belongs to the user
+        if (note.user.toString() !== req.user._id.toString()) {
+            return res
+                .status(403)
+                .json({ error: "Not authorized to delete this note" });
+        }
+
+        await note.deleteOne();
+        res.status(200).json({ message: "Note deleted successfully" });
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        console.error("Error in deleteNote:", err);
+        res.status(500).json({ error: "Failed to delete note" });
     }
 };
