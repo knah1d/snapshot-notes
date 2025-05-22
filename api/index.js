@@ -28,16 +28,18 @@ app.use(helmet());
 
 // Rate limiting (early to protect all routes)
 const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 100,
+    windowMs: 15 * 60 * 1000,
+    max: 100,
 });
-app.use('/api', limiter);
+app.use("/api", limiter);
 
 // CORS middleware
-app.use(cors({
-  origin: "http://localhost:3000", // or your frontend domain
-  credentials: true, // to allow cookies
-}));
+app.use(
+    cors({
+        origin: "http://localhost:3000", // or your frontend domain
+        credentials: true, // to allow cookies
+    })
+);
 
 // Body parsing middleware
 app.use(express.json());
@@ -50,12 +52,12 @@ app.use("/api/notes", noteRouter);
 app.use("/api/auth", authRouter);
 app.use("/api/profile", profileRouter);
 app.get("/", (req, res) => {
-  res.send("✅ Server is running with secure headers");
+    res.send("✅ Server is running with secure headers");
 });
 // Global error handler (after routes)
 app.use(errorHandler);
 
 // Start server
 app.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
+    console.log(`🚀 Server running on port ${PORT}`);
 });
