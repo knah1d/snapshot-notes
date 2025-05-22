@@ -11,6 +11,7 @@ import { errorHandler } from "./middlewares/errorHandler.js";
 import connectDB from "./config/db.js";
 import noteRouter from "./routes/noteRouter.js";
 import authRouter from "./routes/authRouter.js";
+import profileRouter from "./routes/profileRoutes.js";
 
 // Load environment variables
 dotenv.config();
@@ -47,6 +48,7 @@ app.use(cookieParser());
 // Routes
 app.use("/api/notes", noteRouter);
 app.use("/api/auth", authRouter);
+app.use("/api/profile", profileRouter);
 app.get("/", (req, res) => {
   res.send("✅ Server is running with secure headers");
 });

@@ -3,10 +3,9 @@ import bcrypt from "bcryptjs";
 import User from "../models/User.js";
 import { signupSchema, loginSchema } from "../validators/authValidator.js";
 
-
 const createSendToken = (user, res) => {
     const accessToken = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
-        expiresIn: "1m",
+        expiresIn: "15m",
     });
 
     const refreshToken = jwt.sign(
@@ -53,20 +52,20 @@ export const signup = async (req, res, next) => {
     try {
         const { error } = signupSchema.validate(req.body);
         if (error) throw new Error(error.details[0].message);
-        
+
         const { email, password } = req.body;
         const existingUser = await User.findOne({ email });
         if (existingUser) {
             return res.status(400).json({ error: "User already exists" });
         }
-        
+
         const user = await User.create({ email, password });
         if (!user) {
             return res.status(400).json({ error: "User creation failed" });
         }
 
         const accessToken = createSendToken(user, res);
-        
+
         res.status(201).json({ token: accessToken });
     } catch (err) {
         next(err);
@@ -83,14 +82,14 @@ export const login = async (req, res, next) => {
         if (!user) {
             return res.status(401).json({ error: "Invalid email or password" });
         }
-        
+
         const isMatch = await bcrypt.compare(password, user.password);
         if (!isMatch) {
             return res.status(401).json({ error: "Invalid email or password" });
         }
-        
+
         const accessToken = createSendToken(user, res);
-        
+
         res.status(200).json({ token: accessToken });
     } catch (err) {
         next(err);
