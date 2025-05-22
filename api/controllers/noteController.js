@@ -6,20 +6,20 @@ export const getNotes = async (req, res) => {
         const page = parseInt(req.query.page) || 1;
         const limit = parseInt(req.query.limit) || 10;
         const skip = (page - 1) * limit;
-        
+
         const notes = await Note.find({ user: req.user._id })
             .sort({ createdAt: -1 })
             .skip(skip)
             .limit(limit);
-            
+
         const total = await Note.countDocuments({ user: req.user._id });
-        
+
         res.status(200).json({
             notes,
             currentPage: page,
             totalPages: Math.ceil(total / limit),
             totalNotes: total,
-            hasMore: skip + notes.length < total
+            hasMore: skip + notes.length < total,
         });
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -30,12 +30,12 @@ export const getNotes = async (req, res) => {
 export const createNote = async (req, res) => {
     const { title, content } = req.body;
     try {
-        const newNote = await Note.create({ 
-            title, 
+        const newNote = await Note.create({
+            title,
             content,
-            user: req.user._id, 
+            user: req.user._id,
             createdAt: Date.now(),
-            updatedAt: Date.now()
+            updatedAt: Date.now(),
         });
         res.status(201).json(newNote);
     } catch (err) {
