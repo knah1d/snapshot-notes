@@ -36,7 +36,20 @@ app.use("/api", limiter);
 // CORS middleware
 app.use(
     cors({
-        origin: "http://localhost:3000", // or your frontend domain
+        origin: function (origin, callback) {
+            // Allow requests with no origin
+            // (like mobile apps or curl requests)
+            if (!origin) return callback(null, true);
+
+            // Allow all origins during development
+            return callback(null, true);
+
+            // For production, restrict to specific origin
+            // if(allowedOrigins.indexOf(origin) === -1){
+            //   return callback(new Error('The CORS policy for this site does not allow access from the specified Origin.'), false);
+            // }
+            // return callback(null, true);
+        },
         credentials: true, // to allow cookies
     })
 );
@@ -51,6 +64,15 @@ app.use(cookieParser());
 app.use("/api/notes", noteRouter);
 app.use("/api/auth", authRouter);
 app.use("/api/profile", profileRouter);
+
+// Health check endpoint for testing API connectivity
+app.get("/api/health", (req, res) => {
+    res.status(200).json({
+        status: "success",
+        message: "API is healthy",
+        timestamp: new Date().toISOString(),
+    });
+});
 app.get("/", (req, res) => {
     res.send("✅ Server is running with secure headers");
 });
