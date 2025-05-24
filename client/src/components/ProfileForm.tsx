@@ -76,7 +76,7 @@ const ProfileForm = ({ userData, onUpdate }: ProfileFormProps) => {
 
       const success = AuthService.updateUserData(updatedUserData);
       
-      if (success) {
+      if (await success) {
         onUpdate(updatedUserData);
         setIsEditing(false);
       } else {
