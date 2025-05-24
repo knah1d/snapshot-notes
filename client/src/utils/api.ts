@@ -88,9 +88,9 @@ export const processApiError = (error: unknown): string => {
  */
 export const safeFetch = async <T = any>(url: string, options: RequestInit = {}): Promise<T> => {
   try {
-    // Add default headers if not provided
+    // Add default headers if not provided and if body is not FormData
     const headers = {
-      'Content-Type': 'application/json',
+      ...(!(options.body instanceof FormData) && {'Content-Type': 'application/json'}),
       ...options.headers,
     };
 

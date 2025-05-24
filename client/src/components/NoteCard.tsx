@@ -6,6 +6,7 @@ interface NoteCardProps {
     content: string;
     createdAt: string;
     tags?: string[];
+    images?: string[];
     onEdit?: () => void;
     onDelete?: () => void;
 }
@@ -15,9 +16,14 @@ const NoteCard = ({
     content,
     createdAt,
     tags = [],
+    images = [],
     onEdit,
     onDelete,
 }: NoteCardProps) => {
+    // Use environment variable or default to localhost for API URL
+    const API_BASE_URL =
+        process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+
     return (
         <Card className="h-full">
             <div className="flex flex-col h-full">
@@ -30,6 +36,7 @@ const NoteCard = ({
                             <button
                                 onClick={onEdit}
                                 className="text-gray-400 hover:text-blue-500 transition-colors"
+                                aria-label="Edit note"
                             >
                                 <svg
                                     xmlns="http://www.w3.org/2000/svg"
@@ -41,7 +48,7 @@ const NoteCard = ({
                                     <path
                                         strokeLinecap="round"
                                         strokeLinejoin="round"
-                                        strokeWidth={2}
+                                        strokeWidth="2"
                                         d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
                                     />
                                 </svg>
@@ -51,6 +58,7 @@ const NoteCard = ({
                             <button
                                 onClick={onDelete}
                                 className="text-gray-400 hover:text-red-500 transition-colors"
+                                aria-label="Delete note"
                             >
                                 <svg
                                     xmlns="http://www.w3.org/2000/svg"
@@ -62,7 +70,7 @@ const NoteCard = ({
                                     <path
                                         strokeLinecap="round"
                                         strokeLinejoin="round"
-                                        strokeWidth={2}
+                                        strokeWidth="2"
                                         d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
                                     />
                                 </svg>
@@ -74,6 +82,35 @@ const NoteCard = ({
                 <p className="text-gray-600 dark:text-gray-400 mb-4 line-clamp-3">
                     {content}
                 </p>
+
+                {images && images.length > 0 && (
+                    <div className="flex overflow-x-auto gap-2 mb-4 pb-2 scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600">
+                        {images.map((image, index) => (
+                            <div
+                                key={index}
+                                className="relative min-w-[80px] w-[80px] h-[60px] rounded-md overflow-hidden bg-gray-100 dark:bg-gray-700 flex-shrink-0"
+                            >
+                                <img
+                                    src={`${API_BASE_URL.replace(
+                                        "/api",
+                                        ""
+                                    )}/${image}`}
+                                    alt={`Note image ${index + 1}`}
+                                    className="w-full h-full object-cover"
+                                    loading="lazy"
+                                    onError={(e) => {
+                                        console.error(
+                                            `Error loading image ${index}:`,
+                                            image
+                                        );
+                                        e.currentTarget.src =
+                                            "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9IiNlZWVlZWUiLz48dGV4dCB4PSI1MCUiIHk9IjUwJSIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjEyIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj5JbWFnZTwvdGV4dD48L3N2Zz4=";
+                                    }}
+                                />
+                            </div>
+                        ))}
+                    </div>
+                )}
 
                 {tags.length > 0 && (
                     <div className="flex flex-wrap gap-2 mb-3">

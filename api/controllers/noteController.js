@@ -38,30 +38,62 @@ export const getNotes = async (req, res) => {
 
 // Create a note
 export const createNote = async (req, res) => {
-    const { title, content } = req.body;
-
-    if (!title || !title.trim()) {
-        return res.status(400).json({ error: "Title is required" });
-    }
-
     try {
-        const newNote = await Note.create({
+        console.log("Request body:", req.body);
+        console.log("Files received:", req.files);
+
+        const { title, content, tags } = req.body;
+        
+        if (!title || !title.trim()) {
+            return res.status(400).json({ error: "Title is required" });
+        }
+        
+        // Process uploaded images
+        const images = [];
+        if (req.files && req.files.length > 0) {
+            images.push(...req.files.map((file) => `uploads/${file.filename}`));
+            console.log("Processing images:", images);
+        }
+
+        // Safely parse tags or use empty array
+        let parsedTags = [];
+        if (tags) {
+            try {
+                parsedTags = typeof tags === 'string' ? JSON.parse(tags) : tags;
+                console.log("Parsed tags:", parsedTags);
+            } catch (err) {
+                console.log("Failed to parse tags, using empty array", err);
+            }
+        }
+
+        const note = await Note.create({
             title: title.trim(),
             content: content || "",
+            images,
+            tags: parsedTags,
             user: req.user._id,
         });
 
+        console.log("Note created successfully:", {
+            id: note._id.toString(),
+            title: note.title,
+            imagesCount: note.images.length,
+            images: note.images,
+        });
+
         res.status(201).json({
-            id: newNote._id.toString(),
-            title: newNote.title,
-            content: newNote.content,
-            createdAt: newNote.createdAt.toISOString(),
-            updatedAt: newNote.updatedAt.toISOString(),
-            userId: newNote.user.toString(),
+            id: note._id.toString(),
+            title: note.title,
+            content: note.content,
+            images: note.images,
+            tags: note.tags,
+            createdAt: note.createdAt.toISOString(),
+            updatedAt: note.updatedAt.toISOString(),
+            userId: note.user.toString(),
         });
     } catch (err) {
         console.error("Error in createNote:", err);
-        res.status(400).json({ error: "Failed to create note" });
+        res.status(500).json({ error: "Failed to create note" });
     }
 };
 

@@ -60,6 +60,9 @@ app.use(express.json());
 // Cookie parsing middleware
 app.use(cookieParser());
 
+// Serve static files from uploads directory
+app.use("/uploads", express.static("uploads"));
+
 // Routes
 app.use("/api/notes", noteRouter);
 app.use("/api/auth", authRouter);

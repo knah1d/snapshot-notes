@@ -31,20 +31,76 @@ export const NoteService = {
   // Create new note
   createNote: async (input: CreateNoteInput): Promise<Note> => {
     try {
-      const token = sessionStorage.getItem('accessToken'); 
+      const token = sessionStorage.getItem('accessToken');
       if (!token) throw new Error('Not authenticated');
 
-      return await safeFetch(`${API_BASE_URL}/notes`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          title: input.title.trim(),
-          content: input.content || ""
-        })
-      });
+      // If we have images, use FormData
+      if (input.images && input.images.length > 0) {
+        const formData = new FormData();
+        formData.append('title', input.title);
+        formData.append('content', input.content || "");
+        
+        if (input.tags && input.tags.length > 0) {
+          formData.append('tags', JSON.stringify(input.tags));
+        } else {
+          formData.append('tags', JSON.stringify([]));
+        }
+        
+        // Enhanced logging for debugging
+        console.log(`Uploading ${input.images.length} images:`, 
+          input.images.map(img => ({name: img.name, type: img.type, size: img.size}))
+        );
+        
+        // Append each image to the FormData
+        input.images.forEach((image, index) => {
+          formData.append('images', image);
+          console.log(`Added image ${index}: ${image.name}, type: ${image.type}, size: ${image.size}B`);
+        });
+
+        console.log('API URL:', `${API_BASE_URL}/notes`);
+        console.log('Token available:', !!token);
+        
+        try {
+          const response = await fetch(`${API_BASE_URL}/notes`, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${token}`
+              // Do NOT set Content-Type for FormData, browser will set it with boundary
+            },
+            body: formData,
+            credentials: 'include'
+          });
+          
+          console.log('Upload response status:', response.status);
+          
+          if (!response.ok) {
+            const errorText = await response.text();
+            console.error('Upload error response:', errorText);
+            throw new Error(`Upload failed: ${response.status} ${errorText}`);
+          }
+          
+          const data = await response.json();
+          console.log('Upload success:', data);
+          return data;
+        } catch (uploadError) {
+          console.error('Upload request error:', uploadError);
+          throw uploadError;
+        }
+      } else {
+        // If no images, use JSON
+        return await safeFetch(`${API_BASE_URL}/notes`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            title: input.title.trim(),
+            content: input.content || "",
+            tags: input.tags || []
+          })
+        });
+      }
     } catch (error) {
       console.error('Error creating note:', error);
       // Just rethrow the error - our safeFetch already standardizes error messages

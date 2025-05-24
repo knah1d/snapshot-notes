@@ -160,4 +160,21 @@ export const AuthService = {
       throw error;
     }
   },
+
+  // Get user stats
+  getUserStats: async (): Promise<{ count: number; recentCount: number; lastActivity: string | null }> => {
+    try {
+      const token = sessionStorage.getItem('accessToken');
+      if (!token) throw new Error('Not authenticated');
+
+      return await safeFetch(`${API_BASE_URL}/profile/stats`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        }
+      });
+    } catch (error) {
+      console.error('Error getting user stats:', error);
+      throw error;
+    }
+  },
 };

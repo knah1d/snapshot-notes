@@ -15,6 +15,18 @@ const noteSchema = new mongoose.Schema({
         type: String,
         required: true,
     },
+    images: [
+        {
+            type: String,
+            
+        },
+    ],
+    tags: [
+        {
+            type: String,
+           
+        },
+    ],
     createdAt: {
         type: Date,
         default: Date.now,
