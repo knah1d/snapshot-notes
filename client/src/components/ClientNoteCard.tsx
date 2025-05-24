@@ -13,9 +13,19 @@ interface ClientNoteCardProps {
   content: string;
   createdAt: string;
   tags?: string[];
+  onUpdate?: () => void;
+  onDelete?: () => void;
 }
 
-const ClientNoteCard = ({ id, title: initialTitle, content: initialContent, createdAt, tags = [] }: ClientNoteCardProps) => {
+const ClientNoteCard = ({ 
+  id, 
+  title: initialTitle, 
+  content: initialContent, 
+  createdAt, 
+  tags = [],
+  onUpdate,
+  onDelete
+}: ClientNoteCardProps) => {
   const [isEditing, setIsEditing] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -41,6 +51,13 @@ const ClientNoteCard = ({ id, title: initialTitle, content: initialContent, crea
     try {
       await NoteService.updateNote({ id, title, content });
       setIsEditing(false);
+      
+      // Call the callback function if provided
+      if (onUpdate) {
+        onUpdate();
+      }
+      
+      // Still call router.refresh() for compatibility
       router.refresh();
     } catch (error) {
       console.error('Error updating note:', error);
@@ -75,6 +92,13 @@ const ClientNoteCard = ({ id, title: initialTitle, content: initialContent, crea
     setIsLoading(true);
     try {
       await NoteService.deleteNote(id);
+      
+      // Call the callback function if provided
+      if (onDelete) {
+        onDelete();
+      }
+      
+      // Still call router.refresh() for compatibility
       router.refresh();
     } catch (error) {
       console.error('Error deleting note:', error);

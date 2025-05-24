@@ -7,7 +7,11 @@ import { NoteService } from '@/services/noteService';
 import Card from './Card';
 import ErrorMessage from './ErrorMessage';
 
-const NewNoteButton = () => {
+interface NewNoteButtonProps {
+  onNoteCreated?: () => void;
+}
+
+const NewNoteButton = ({ onNoteCreated }: NewNoteButtonProps) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [title, setTitle] = useState('');
@@ -34,6 +38,13 @@ const NewNoteButton = () => {
       setIsModalOpen(false);
       setTitle('');
       setContent('');
+      
+      // Call the callback function if provided
+      if (onNoteCreated) {
+        onNoteCreated();
+      }
+      
+      // Still call router.refresh() for compatibility
       router.refresh();
     } catch (error) {
       console.error('Error creating note:', error);
