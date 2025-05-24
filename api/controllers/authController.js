@@ -53,20 +53,51 @@ export const signup = async (req, res, next) => {
         const { error } = signupSchema.validate(req.body);
         if (error) throw new Error(error.details[0].message);
 
-        const { email, password } = req.body;
+        const { email, password, name } = req.body;
         const existingUser = await User.findOne({ email });
         if (existingUser) {
             return res.status(400).json({ error: "User already exists" });
         }
 
-        const user = await User.create({ email, password });
+        // Parse full name into first and last name
+        let firstName = "John";
+        let lastName = "Doe";
+
+        if (name) {
+            const nameParts = name.trim().split(" ");
+            firstName = nameParts[0] || "John";
+            lastName = nameParts.slice(1).join(" ") || "Doe";
+        }
+
+        const user = await User.create({
+            email,
+            password,
+            firstName,
+            lastName,
+        });
+
         if (!user) {
             return res.status(400).json({ error: "User creation failed" });
         }
 
         const accessToken = createSendToken(user, res);
 
-        res.status(201).json({ token: accessToken });
+        // Create a user object to return, excluding sensitive data
+        const userData = {
+            id: user._id,
+            email: user.email,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            initials: (
+                user.firstName.charAt(0) + user.lastName.charAt(0)
+            ).toUpperCase(),
+            createdAt: user.createdAt,
+        };
+
+        res.status(201).json({
+            token: accessToken,
+            user: userData,
+        });
     } catch (err) {
         next(err);
     }
@@ -90,7 +121,25 @@ export const login = async (req, res, next) => {
 
         const accessToken = createSendToken(user, res);
 
-        res.status(200).json({ token: accessToken });
+        // Create a user object to return, excluding sensitive data
+        const userData = {
+            id: user._id,
+            email: user.email,
+            firstName: user.firstName || "John",
+            lastName: user.lastName || "Doe",
+            initials:
+                user.firstName && user.lastName
+                    ? (
+                          user.firstName.charAt(0) + user.lastName.charAt(0)
+                      ).toUpperCase()
+                    : "JD",
+            createdAt: user.createdAt,
+        };
+
+        res.status(200).json({
+            token: accessToken,
+            user: userData,
+        });
     } catch (err) {
         next(err);
     }
