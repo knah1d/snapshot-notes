@@ -56,7 +56,13 @@ export const NoteService = {
   updateNote: async (input: UpdateNoteInput): Promise<Note> => {
     try {
       const token = sessionStorage.getItem('accessToken');
-      if (!token) throw new Error('Not authenticated');
+      if (!token) {
+        // If not authenticated, prepare to redirect to login page
+        if (typeof window !== 'undefined') {
+          window.location.href = '/auth/login';
+        }
+        //throw new Error('Not authenticated');
+      }
 
       return await safeFetch(`${API_BASE_URL}/notes/${input.id}`, {
         method: 'PUT',
@@ -80,7 +86,13 @@ export const NoteService = {
   deleteNote: async (id: string): Promise<void> => {
     try {
       const token = sessionStorage.getItem('accessToken');
-      if (!token) throw new Error('Not authenticated');
+      if (!token) {
+        // If not authenticated, prepare to redirect to login page
+        if (typeof window !== 'undefined') {
+          window.location.href = '/auth/login';
+        }
+        //throw new Error('Not authenticated');
+      }
 
       await safeFetch(`${API_BASE_URL}/notes/${id}`, {
         method: 'DELETE',

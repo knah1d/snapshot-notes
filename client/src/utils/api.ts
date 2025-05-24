@@ -6,6 +6,38 @@ import fetch from 'cross-fetch';
  * Utility functions for handling API and network errors
  */
 
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+
+/**
+ * Refresh the access token using the refresh token stored in cookies
+ * @returns boolean indicating if refresh was successful
+ */
+export const refreshAccessToken = async (): Promise<boolean> => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/auth/refresh`, {
+      method: 'GET',
+      credentials: 'include', // Include cookies
+    });
+
+    if (!response.ok) {
+      return false;
+    }
+
+    const data = await response.json();
+    
+    // Store the new access token
+    if (data.token) {
+      sessionStorage.setItem('accessToken', data.token);
+      return true;
+    }
+    
+    return false;
+  } catch (error) {
+    console.error('Error refreshing token:', error);
+    return false;
+  }
+};
+
 /**
  * Process and format API errors for consistent error handling
  * @param error The error caught in try/catch blocks
@@ -54,7 +86,7 @@ export const processApiError = (error: unknown): string => {
  * @param options Fetch API options
  * @returns Response data
  */
-export const safeFetch = async (url: string, options: RequestInit = {}) => {
+export const safeFetch = async <T = any>(url: string, options: RequestInit = {}): Promise<T> => {
   try {
     // Add default headers if not provided
     const headers = {
@@ -81,6 +113,28 @@ export const safeFetch = async (url: string, options: RequestInit = {}) => {
       // If the response is not ok, throw an error
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
+        
+        // Check if the error is due to an expired token
+        if (response.status === 401 && (errorData.error?.includes('expired') || errorData.error?.includes('invalid'))) {
+          // Try to refresh the token
+          const refreshed = await refreshAccessToken();
+          if (refreshed) {
+            // If token was refreshed successfully, retry the original request
+            const newOptions = { ...options };
+            
+            // Update the Authorization header with the new token if it exists
+            if (newOptions.headers && typeof newOptions.headers === 'object') {
+              const token = sessionStorage.getItem('accessToken');
+              if (token) {
+                (newOptions.headers as Record<string, string>)['Authorization'] = `Bearer ${token}`;
+              }
+            }
+            
+            // Retry the request with the new token
+            return safeFetch(url, newOptions);
+          }
+        }
+        
         throw new Error(errorData.error || `HTTP error ${response.status}`);
       }
 

@@ -41,7 +41,8 @@ export const AuthService = {
         },
         body: JSON.stringify({
           email: userData.email,
-          password: password
+          password: password,
+          name: `${userData.firstName || ''} ${userData.lastName || ''}`.trim()
         }),
         credentials: 'include',
       });
@@ -84,6 +85,25 @@ export const AuthService = {
     return sessionStorage.getItem('accessToken');
   },
   
+  // Refresh the auth token
+  refreshToken: async (): Promise<boolean> => {
+    try {
+      return await safeFetch(`${API_BASE_URL}/auth/refresh`, {
+        method: 'GET',
+        credentials: 'include',
+      }).then(data => {
+        if (data.token) {
+          sessionStorage.setItem('accessToken', data.token);
+          return true;
+        }
+        return false;
+      });
+    } catch (error) {
+      console.error('Error refreshing token:', error);
+      return false;
+    }
+  },
+  
   // Get current user data
   getCurrentUser: (): UserData | null => {
     if (!AuthService.isAuthenticated()) {
@@ -96,9 +116,16 @@ export const AuthService = {
     }
     
     try {
+      // Validate that userData is valid JSON before parsing
+      if (typeof userData !== 'string' || !userData.trim().startsWith('{')) {
+        localStorage.removeItem(USER_DATA_KEY);
+        return null;
+      }
       return JSON.parse(userData);
     } catch (error) {
       console.error('Error parsing user data:', error);
+      // Clean up corrupted data
+      localStorage.removeItem(USER_DATA_KEY);
       return null;
     }
   },
