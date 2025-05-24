@@ -17,6 +17,14 @@ export default function NotesPage() {
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
 
+  // Create a state to track note refresh trigger
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
+  
+  // Function to trigger notes refresh that can be passed to child components
+  const refreshNotes = () => {
+    setRefreshTrigger(prev => prev + 1);
+  };
+  
   useEffect(() => {
     if (!AuthService.isAuthenticated()) {
       router.push('/auth/login');
@@ -25,6 +33,7 @@ export default function NotesPage() {
 
     const loadNotes = async () => {
       try {
+        setIsLoading(true);
         const result = await NoteService.getNotes();
         setNotes(result.notes);
         setError(null);
@@ -54,12 +63,11 @@ export default function NotesPage() {
     };
 
     loadNotes();
-  }, [router]);
+  }, [router, refreshTrigger]);
 
   const handleRetry = () => {
-    setIsLoading(true);
     setError(null);
-    router.refresh();
+    refreshNotes();
   };
 
   return (
@@ -85,7 +93,7 @@ export default function NotesPage() {
                 />
               </div>
               
-              <NewNoteButton />
+              <NewNoteButton onNoteCreated={refreshNotes} />
             </div>
           </div>
 
@@ -121,6 +129,8 @@ export default function NotesPage() {
                   content={note.content}
                   createdAt={note.createdAt}
                   tags={[]}
+                  onUpdate={refreshNotes}
+                  onDelete={refreshNotes}
                 />
               ))}
             </div>
