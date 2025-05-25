@@ -163,12 +163,3 @@ npm start
 4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
 
-## License
-
-This project is licensed under the MIT License.
-
-## Acknowledgments
-
-- Next.js team for an amazing React framework
-- MongoDB for a flexible and powerful database
-- Express.js for a fast, unopinionated backend framework
